@@ -1,18 +1,47 @@
+using System.IdentityModel.Tokens.Jwt;
 using LikeSystem.Database;
 using LikeSystem.DTOs;
 using LikeSystem.Interface;
 using LikeSystem.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Security.Claims;
 
 public class LikeService : ILikeService
 {
     private readonly ApplicationDbContext context;
     private readonly ILogger<LikeService> logger;
+    private readonly IConfiguration configuration;
 
-    public LikeService(ApplicationDbContext _context, ILogger<LikeService> _logger)
+    public LikeService(ApplicationDbContext _context, ILogger<LikeService> _logger, IConfiguration _configuration)
     {
         context = _context;
         logger = _logger;
+        configuration = _configuration;
+    }
+
+    public async Task<Result<JwtSecurityToken>> GenerateAccessToken(string email)
+    {
+        // Create user claims
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, email),
+        };
+
+        // Create a JWT
+        var token = new JwtSecurityToken(
+            issuer: configuration["Jwt:Issuer"],
+            audience: configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(1), // Token expiration time
+            signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
+                SecurityAlgorithms.HmacSha256)
+        );
+
+        return Result<JwtSecurityToken>.Success(token);
     }
 
     public async Task<Result<ArticleDto>> GetArticleAsync(int articleId, string userId)

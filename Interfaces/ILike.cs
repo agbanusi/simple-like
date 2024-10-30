@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using LikeSystem.DTOs;
 
 namespace LikeSystem.Interface
@@ -9,5 +10,7 @@ public interface ILikeService
     Task<Result<ArticleDto>> CreateArticleAsync(CreateArticleDto dto);
     Task<Result<bool>> LikeArticleAsync(int articleId, string userId);
     Task<Result<bool>> UnlikeArticleAsync(int articleId, string userId);
+
+    Task<Result<JwtSecurityToken>> GenerateAccessToken(string email);
 }
 }
