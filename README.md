@@ -1,7 +1,5 @@
 ## Simple Like Systme
 
-Blog Inspiration: https://medium.com/@KumarHalder/token-based-authentication-in-asp-net-core-43e99aee0593
-
 ## Questions
 
 ### How can you improve the feature to make it more resilient against abuse/exploitation?
@@ -19,3 +17,5 @@ By adding a queueing system to reduce load on the server for increment of like c
 ### How will you scale to a million concurrent users requesting the article's like count at the same time
 
 By using a cache db like Redis to store the like counts and and can easily be fetched concurrently by users
+
+Blog Guide: https://medium.com/@KumarHalder/token-based-authentication-in-asp-net-core-43e99aee0593
