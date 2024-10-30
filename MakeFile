@@ -1,3 +1,9 @@
-initialize-db : dotnet ef migrations add InitialCreate
-update-db : dotnet ef database update
-run : dotnet run
+
+initialize-db: 
+	dotnet ef migrations add InitialCreate
+update-db: 
+	dotnet ef database update
+run: 
+	dotnet run
+build:
+	dotnet build

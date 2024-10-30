@@ -22,7 +22,6 @@ public class ArticlesController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
-        // Check user credentials (in a real application, you'd authenticate against a database)
         // generate token for user
         var token =  await likeService.GenerateAccessToken(model.Email);
         // return access token for user's use
@@ -33,8 +32,19 @@ public class ArticlesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetArticles([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var result = await likeService.GetArticlesAsync(userId, page, pageSize);
+        var result = await likeService.GetArticlesAsync( page, pageSize);
+        
+        if (!result.IsSuccess)
+            return BadRequest(result.Error);
+            
+        return Ok(result.Data);
+    }
+
+    [HttpGet("liked")]
+    public async Task<IActionResult> GetLikedArticles([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var userId = likeService.GetRandomUserId();
+        var result = await likeService.GetLikedArticlesAsync(userId, page, pageSize);
         
         if (!result.IsSuccess)
             return BadRequest(result.Error);
@@ -47,8 +57,7 @@ public class ArticlesController : ControllerBase
 
     public async Task<IActionResult> GetArticle(int id)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var result = await likeService.GetArticleAsync(id, userId);
+        var result = await likeService.GetArticleAsync(id);
         
         if (!result.IsSuccess)
             return NotFound(result.Error);
@@ -74,26 +83,26 @@ public class ArticlesController : ControllerBase
 
     public async Task<IActionResult> LikeArticle(int id)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = likeService.GetRandomUserId();
         var result = await likeService.LikeArticleAsync(id, userId);
         
         if (!result.IsSuccess)
             return BadRequest(result.Error);
             
-        return Ok();
+        return Ok(result.Data);
     }
 
-    [HttpDelete("{id}/like")]
+    [HttpPost("{id}/unlike")]
     [Authorize]
 
     public async Task<IActionResult> UnlikeArticle(int id)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = likeService.GetRandomUserId();
         var result = await likeService.UnlikeArticleAsync(id, userId);
         
         if (!result.IsSuccess)
             return BadRequest(result.Error);
             
-        return Ok();
+        return Ok(result.Data);
     }
 }

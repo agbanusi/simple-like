@@ -36,7 +36,7 @@ public class LikeService : ILikeService
             issuer: configuration["Jwt:Issuer"],
             audience: configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(1), // Token expiration time
+            expires: DateTime.UtcNow.AddMinutes(720), // Token expiration time
             signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
                 SecurityAlgorithms.HmacSha256)
         );
@@ -44,7 +44,7 @@ public class LikeService : ILikeService
         return Result<JwtSecurityToken>.Success(token);
     }
 
-    public async Task<Result<ArticleDto>> GetArticleAsync(int articleId, string userId)
+    public async Task<Result<ArticleDto>> GetArticleAsync(int articleId)
     {
         try
         {
@@ -57,7 +57,6 @@ public class LikeService : ILikeService
                     Content = a.Content,
                     LikesCount = a.LikesCount,
                     CreatedAt = a.CreatedAt,
-                    IsLikedByCurrentUser = a.Likes.Any(l => l.UserId == userId)
                 })
                 .FirstOrDefaultAsync(a => a.Id == articleId);
 
@@ -73,7 +72,7 @@ public class LikeService : ILikeService
         }
     }
 
-    public async Task<Result<List<ArticleDto>>> GetArticlesAsync(string userId, int page = 1, int pageSize = 10)
+    public async Task<Result<List<ArticleDto>>> GetArticlesAsync( int page = 1, int pageSize = 10)
     {
         try
         {
@@ -82,6 +81,35 @@ public class LikeService : ILikeService
                 .OrderByDescending(a => a.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(a => new ArticleDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    Content = a.Content,
+                    LikesCount = a.LikesCount,
+                    CreatedAt = a.CreatedAt,
+                })
+                .ToListAsync();
+
+            return Result<List<ArticleDto>>.Success(articles);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving articles");
+            return Result<List<ArticleDto>>.Failure("An error occurred while retrieving articles");
+        }
+    }
+
+    public async Task<Result<List<ArticleDto>>> GetLikedArticlesAsync(string userId, int page = 1, int pageSize = 10)
+    {
+        try
+        {
+            var articles = await context.Articles
+                .AsNoTracking()
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Where(a => a.Likes.Any(l => l.UserId == userId))
                 .Select(a => new ArticleDto
                 {
                     Id = a.Id,
@@ -203,5 +231,11 @@ public class LikeService : ILikeService
             logger.LogError(ex, "Error creating article");
             return Result<ArticleDto>.Failure("An error occurred while creating the article");
         }
+    }
+
+    public string GetRandomUserId()
+    {
+        var random = new Random();
+        return random.Next(1, 11).ToString();
     }
 }
